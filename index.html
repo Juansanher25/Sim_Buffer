@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html lang="es" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Guía 6: Soluciones Amortiguadoras - Laboratorio Interactivo</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 h-full flex flex-col">
+
+    <header class="bg-indigo-700 text-white shadow-md">
+        <div class="max-w-7xl mx-auto px-4 py-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row justify-between items-center">
+            <div>
+                <h1 class="text-2xl font-bold flex items-center gap-2">
+                    <i class="fa-solid fa-flask-vial"></i> Soluciones Amortiguadoras
+                </h1>
+                <p class="text-indigo-200 text-sm mt-1">Química Experimental II - Guía 6 | Curvas Teóricas y Datos Experimentales</p>
+            </div>
+            <div class="mt-3 sm:mt-0 flex flex-wrap gap-2">
+                <button onclick="cargarCurvasTeoricas()" class="bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1.5 rounded-lg text-sm font-medium shadow transition flex items-center gap-1.5">
+                    <i class="fa-solid fa-chart-line"></i> Cargar Curvas Teóricas
+                </button>
+                <button onclick="cargarDatosEjemplo()" class="bg-indigo-600 hover:bg-indigo-500 text-white px-3 py-1.5 rounded-lg text-sm font-medium shadow transition flex items-center gap-1.5">
+                    <i class="fa-solid fa-wand-magic-sparkles"></i> Cargar Ejemplo Real
+                </button>
+                <button onclick="reiniciarDatos()" class="bg-slate-800 hover:bg-slate-700 text-white px-3 py-1.5 rounded-lg text-sm font-medium shadow transition flex items-center gap-1.5">
+                    <i class="fa-solid fa-rotate-right"></i> Reiniciar
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-8">
+        
+        <section class="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
+            <h2 class="text-lg font-semibold text-slate-900 mb-2 flex items-center gap-2">
+                <i class="fa-solid fa-circle-info text-indigo-600"></i> Instrucciones y Curvas Teóricas Esperadas
+            </h2>
+            <p class="text-sm text-slate-600 leading-relaxed mb-3">
+                Haz clic en el botón <strong class="text-emerald-700">"Cargar Curvas Teóricas"</strong> para proyectar las gráficas ideales calculadas estequiométricamente. El sistema cuenta con <em>alarmas teóricas inteligentes</em> que alertarán de inconsistencias químicas graves (como saltos en buffers o pH invertidos) si ingresas datos atípicos.
+            </p>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs text-slate-600 bg-slate-50 p-3 rounded-lg border border-slate-100">
+                <div><strong class="text-indigo-700">Agua Pura (Vasos 1 y 4):</strong> pH inicial 7.00. Salto drástico e inmediato de pH con el primer mL de NaOH o HCl.</div>
+                <div><strong class="text-emerald-700">Buffer Acetatos (Vasos 2 y 5):</strong> pH inicial ~4.74. Excelente capacidad reguladora (meseta casi horizontal).</div>
+                <div><strong class="text-purple-700">Alka-Seltzer (Vasos 3 y 6):</strong> pH inicial ~5.50. Gran resistencia a cambios bruscos por sistemas bicarbonato/citratos.</div>
+            </div>
+        </section>
+
+        <!-- Contenedor dinámico de alertas teóricas (alarmas) -->
+        <div id="contenedorAlarmas" class="space-y-2"></div>
+
+        <section class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+            <div class="bg-slate-100 px-6 py-4 border-b border-slate-200 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+                <div>
+                    <h3 class="text-base font-bold text-slate-900 flex items-center gap-2">
+                        <span class="bg-emerald-100 text-emerald-800 text-xs px-2.5 py-1 rounded-full font-semibold">Parte I</span>
+                        Efecto ante la adición de una base fuerte (NaOH 0.1 M)
+                    </h3>
+                    <p class="text-xs text-slate-500 mt-0.5">Vasos 1 (Agua), 2 (Amortiguador Acetatos) y 3 (Alka-Seltzer).</p>
+                </div>
+            </div>
+
+            <div class="p-6 overflow-x-auto">
+                <table class="w-full text-left border-collapse min-w-[650px]">
+                    <thead>
+                        <tr class="bg-slate-50 border-b border-slate-200 text-xs uppercase text-slate-500 font-semibold">
+                            <th class="p-3 w-16">Vaso</th>
+                            <th class="p-3">Sustancias / Sistema</th>
+                            <th class="p-3 text-center w-24">0 mL (Inicial)</th>
+                            <th class="p-3 text-center w-24">1 mL</th>
+                            <th class="p-3 text-center w-24">2 mL</th>
+                            <th class="p-3 text-center w-24">3 mL</th>
+                            <th class="p-3 text-center w-24">4 mL</th>
+                            <th class="p-3 text-center w-24">5 mL</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100 text-sm">
+                        <!-- Vaso 1: Agua -->
+                        <tr class="hover:bg-slate-50/50">
+                            <td class="p-3 font-medium text-slate-700">1</td>
+                            <td class="p-3 text-slate-600">50 mL H₂O destilada</td>
+                            <td class="p-3 text-center"><input type="number" step="0.01" min="0" max="14" id="naoh_v1_0" oninput="actualizarGraficas()" class="w-20 text-center border border-slate-300 rounded-lg p-1.5 focus:ring-2 focus:ring-indigo-500 focus:outline-none"></td>
+                            <td class="p-3 text-center"><input type="number" step="0.01" min="0" max="14" id="naoh_v1_1" oninput="actualizarGraficas()" class="w-20 text-center border border-slate-300 rounded-lg p-1.5 focus:ring-2 focus:ring-indigo-500 focus:outline-none"></td>
+                            <td class="p-3 text-center"><input type="number" step="0.01" min="0" max="14" id="naoh_v1_2" oninput="actualizarGraficas()" class="w-20 text-center border border-slate-300 rounded-lg p-1.5 focus:ring-2 focus:ring-indigo-500 focus:outline-none"></td>
+                            <td class="p-3 text-center"><input type="number" step="0.01" min="0" max="14" id="naoh_v1_3" oninput="actualizarGraficas()" class="w-20 text-center border border-slate-300 rounded-lg p-1.5 focus:ring-2 focus:ring-indigo-500 focus:outline-none"></td>
+                            <td class="p-3 text-center"><input type="number" step="0.01" min="0" max="14" id="naoh_v1_4" oninput="actualizarGraficas()" class="w-20 text-center border border-slate-300 rounded-lg p-1.5 focus:ring-2 focus:ring-indigo-500 focus:outline-none"></td>
+                            <td class="p-3 text-center"><input type="number" step="0.01" min="0" max="14" id="naoh_v1_5" oninput="actualizarGraficas()" class="w-20 text-center border border-slate-300 rounded-lg p-1.5 focus:ring-2 focus:ring-indigo-500 focus:outline-none"></td>
+                        </tr>
+                        <!-- Vaso 2: Buffer A -->
+                        <tr class="hover:bg-slate-50/50">
+                            <td class="p-3 font-medium text-slate-700">2</td>
+                            <td class="p-3 text-slate-600">25 mL CH₃COOH 0,1M + 25 mL CH₃COONa 0,1M (Amortiguador A)</td>
+                            <td class="p-3 text-center"><input type="number" step="0.01" min="0" max="14" id="naoh_v2_0" oninput="actualizarGraficas()" class="w-20 text-center border border-slate-300 rounded-lg p-1.5 focus:ring-2 focus:ring-indigo-500 focus:outline-none"></td>
+                            <td class="p-3 text-center"><input type="number" step="0.01" min="0" max="14" id="naoh_v2_1" oninput="actualizarGraficas()" class="w-20 text-center border border-slate-300 rounded-lg p-1.5 focus:ring-2 focus:ring-indigo-500 focus:outline-none"></td>
+                            <td class="p-3 text-center"><input type="number" step="0.01" min="0" max="14" id="naoh_v2_2" oninput="actualizarGraficas()" class="w-20 text-center border border-slate-300 rounded-lg p-1.5 focus:ring-2 focus:ring-indigo-500 focus:outline-none"></td>
+                            <td class="p-3 text-center"><input type="number" step="0.01" min="0" max="14" id="naoh_v2_3" oninput="actualizarGraficas()" class="w-20 text-center border border-slate-300 rounded-lg p-1.5 focus:ring-2 focus:ring-indigo-500 focus:outline-none"></td>
+                            <td class="p-3 text-center"><input type="number" step="0.01" min="0" max="14" id="naoh_v2_4" oninput="actualizarGraficas()" class="w-20 text-center border border-slate-300 rounded-lg p-1.5 focus:ring-2 focus:ring-indigo-500 focus:outline-none"></td>
+                            <td class="p-3 text-center"><input type="number" step="0.01" min="0" max="14" id="naoh_v2_5" oninput="actualizarGraficas()" class="w-20 text-center border border-slate-300 rounded-lg p-1.5 focus:ring-2 focus:ring-indigo-500 focus:outline-none"></td>
+                        </tr>
+                        <!-- Vaso 3: Alka-Seltzer -->
+                        <tr class="hover:bg-slate-50/50">
+                            <td class="p-3 font-medium text-slate-700">3</td>
+                            <td class="p-3 text-slate-600">50 mL H₂O + 1 Tableta Alka-Seltzer (Amortiguador B)</td>
+                            <td class="p-3 text-center"><input type="number" step="0.01" min="0" max="14" id="naoh_v3_0" oninput="actualizarGraficas()" class="w-20 text-center border border-slate-300 rounded-lg p-1.5 focus:ring-2 focus:ring-indigo-500 focus:outline-none"></td>
+                            <td class="p-3 text-center"><input type="number" step="0.01" min="0" max="14" id="naoh_v3_1" oninput="actualizarGraficas()" class="w-20 text-center border border-slate-300 rounded-lg p-1.5 focus:ring-2 focus:ring-indigo-500 focus:outline-none"></td>
+                            <td class="p-3 text-center"><input type="number" step="0.01" min="0" max="14" id="naoh_v3_2" oninput="actualizarGraficas()" class="w-20 text-center border border-slate-300 rounded-lg p-1.5 focus:ring-2 focus:ring-indigo-500 focus:outline-none"></td>
+                            <td class="p-3 text-center"><input type="number" step="0.01" min="0" max="14" id="naoh_v3_3" oninput="actualizarGraficas()" class="w-20 text-center border border-slate-300 rounded-lg p-1.5 focus:ring-2 focus:ring-indigo-500 focus:outline-none"></td>
+                            <td class="p-3 text-center"><input type="number" step="0.01" min="0" max="14" id="naoh_v3_4" oninput="actualizarGraficas()" class="w-20 text-center border border-slate-300 rounded-lg p-1.5 focus:ring-2 focus:ring-indigo-500 focus:outline-none"></td>
+                            <td class="p-3 text-center"><input type="number" step="0.01" min="0" max="14" id="naoh_v3_5" oninput="actualizarGraficas()" class="w-20 text-center border border-slate-300 rounded-lg p-1.5 focus:ring-2 focus:ring-indigo-500 focus:outline-none"></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="p-6 border-t border-slate-200 bg-slate-50/50">
+                <h4 class="text-sm font-bold text-slate-700 mb-3 flex items-center gap-2">
+                    <i class="fa-solid fa-chart-line text-emerald-600"></i> Curvas Comparativas: Adición de Base Fuerte (NaOH 0.1 M)
+                </h4>
+                <div class="relative w-full h-80 bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+                    <canvas id="chartNaOH"></canvas>
+                </div>
+            </div>
+        </section>
+
+        <section class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+            <div class="bg-slate-100 px-6 py-4 border-b border-slate-200 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+                <div>
+                    <h3 class="text-base font-bold text-slate-900 flex items-center gap-2">
+                        <span class="bg-amber-100 text-amber-800 text-xs px-2.5 py-1 rounded-full font-semibold">Parte II</span>
+                        Efecto ante la adición de un ácido fuerte (HCl 0.1 M)
+                    </h3>
+                    <p class="text-xs text-slate-500 mt-0.5">Vasos 4 (Agua), 5 (Amortiguador Acetatos) y 6 (Alka-Seltzer).</p>
+                </div>
+            </div>
+
+            <div class="p-6 overflow-x-auto">
+                <table class="w-full text-left border-collapse min-w-[650px]">
+                    <thead>
+                        <tr class="bg-slate-50 border-b border-slate-200 text-xs uppercase text-slate-500 font-semibold">
+                            <th class="p-3 w-16">Vaso</th>
+                            <th class="p-3">Sustancias / Sistema</th>
+                            <th class="p-3 text-center w-24">0 mL (Inicial)</th>
+                            <th class="p-3 text-center w-24">1 mL</th>
+                            <th class="p-3 text-center w-24">2 mL</th>
+                            <th class="p-3 text-center w-24">3 mL</th>
+                            <th class="p-3 text-center w-24">4 mL</th>
+                            <th class="p-3 text-center w-24">5 mL</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100 text-sm">
+                        <!-- Vaso 4: Agua -->
+                        <tr class="hover:bg-slate-50/50">
+                            <td class="p-3 font-medium text-slate-700">4</td>
+                            <td class="p-3 text-slate-600">50 mL H₂O destilada</td>
+                            <td class="p-3 text-center"><input type="number" step="0.01" min="0" max="14" id="hcl_v4_0" oninput="actualizarGraficas()" class="w-20 text-center border border-slate-300 rounded-lg p-1.5 focus:ring-2 focus:ring-indigo-500 focus:outline-none"></td>
+                            <td class="p-3 text-center"><input type="number" step="0.01" min="0" max="14" id="hcl_v4_1" oninput="actualizarGraficas()" class="w-20 text-center border border-slate-300 rounded-lg p-1.5 focus:ring-2 focus:ring-indigo-500 focus:outline-none"></td>
+                            <td class="p-3 text-center"><input type="number" step="0.01" min="0" max="14" id="hcl_v4_2" oninput="actualizarGraficas()" class="w-20 text-center border border-slate-300 rounded-lg p-1.5 focus:ring-2 focus:ring-indigo-500 focus:outline-none"></td>
+                            <td class="p-3 text-center"><input type="number" step="0.01" min="0" max="14" id="hcl_v4_3" oninput="actualizarGraficas()" class="w-20 text-center border border-slate-300 rounded-lg p-1.5 focus:ring-2 focus:ring-indigo-500 focus:outline-none"></td>
+                            <td class="p-3 text-center"><input type="number" step="0.01" min="0" max="14" id="hcl_v4_4" oninput="actualizarGraficas()" class="w-20 text-center border border-slate-300 rounded-lg p-1.5 focus:ring-2 focus:ring-indigo-500 focus:outline-none"></td>
+                            <td class="p-3 text-center"><input type="number" step="0.01" min="0" max="14" id="hcl_v4_5" oninput="actualizarGraficas()" class="w-20 text-center border border-slate-300 rounded-lg p-1.5 focus:ring-2 focus:ring-indigo-500 focus:outline-none"></td>
+                        </tr>
+                        <!-- Vaso 5: Buffer A -->
+                        <tr class="hover:bg-slate-50/50">
+                            <td class="p-3 font-medium text-slate-700">5</td>
+                            <td class="p-3 text-slate-600">25 mL CH₃COOH 0,1M + 25 mL CH₃COONa 0,1M (Amortiguador A)</td>
+                            <td class="p-3 text-center"><input type="number" step="0.01" min="0" max="14" id="hcl_v5_0" oninput="actualizarGraficas()" class="w-20 text-center border border-slate-300 rounded-lg p-1.5 focus:ring-2 focus:ring-indigo-500 focus:outline-none"></td>
+                            <td class="p-3 text-center"><input type="number" step="0.01" min="0" max="14" id="hcl_v5_1" oninput="actualizarGraficas()" class="w-20 text-center border border-slate-300 rounded-lg p-1.5 focus:ring-2 focus:ring-indigo-500 focus:outline-none"></td>
+                            <td class="p-3 text-center"><input type="number" step="0.01" min="0" max="14" id="hcl_v5_2" oninput="actualizarGraficas()" class="w-20 text-center border border-slate-300 rounded-lg p-1.5 focus:ring-2 focus:ring-indigo-500 focus:outline-none"></td>
+                            <td class="p-3 text-center"><input type="number" step="0.01" min="0" max="14" id="hcl_v5_3" oninput="actualizarGraficas()" class="w-20 text-center border border-slate-300 rounded-lg p-1.5 focus:ring-2 focus:ring-indigo-500 focus:outline-none"></td>
+                            <td class="p-3 text-center"><input type="number" step="0.01" min="0" max="14" id="hcl_v5_4" oninput="actualizarGraficas()" class="w-20 text-center border border-slate-300 rounded-lg p-1.5 focus:ring-2 focus:ring-indigo-500 focus:outline-none"></td>
+                            <td class="p-3 text-center"><input type="number" step="0.01" min="0" max="14" id="hcl_v5_5" oninput="actualizarGraficas()" class="w-20 text-center border border-slate-300 rounded-lg p-1.5 focus:ring-2 focus:ring-indigo-500 focus:outline-none"></td>
+                        </tr>
+                        <!-- Vaso 6: Alka-Seltzer -->
+                        <tr class="hover:bg-slate-50/50">
+                            <td class="p-3 font-medium text-slate-700">6</td>
+                            <td class="p-3 text-slate-600">50 mL H₂O + 1 Tableta de Alka-Seltzer (Amortiguador B)</td>
+                            <td class="p-3 text-center"><input type="number" step="0.01" min="0" max="14" id="hcl_v6_0" oninput="actualizarGraficas()" class="w-20 text-center border border-slate-300 rounded-lg p-1.5 focus:ring-2 focus:ring-indigo-500 focus:outline-none"></td>
+                            <td class="p-3 text-center"><input type="number" step="0.01" min="0" max="14" id="hcl_v6_1" oninput="actualizarGraficas()" class="w-20 text-center border border-slate-300 rounded-lg p-1.5 focus:ring-2 focus:ring-indigo-500 focus:outline-none"></td>
+                            <td class="p-3 text-center"><input type="number" step="0.01" min="0" max="14" id="hcl_v6_2" oninput="actualizarGraficas()" class="w-20 text-center border border-slate-300 rounded-lg p-1.5 focus:ring-2 focus:ring-indigo-500 focus:outline-none"></td>
+                            <td class="p-3 text-center"><input type="number" step="0.01" min="0" max="14" id="hcl_v6_3" oninput="actualizarGraficas()" class="w-20 text-center border border-slate-300 rounded-lg p-1.5 focus:ring-2 focus:ring-indigo-500 focus:outline-none"></td>
+                            <td class="p-3 text-center"><input type="number" step="0.01" min="0" max="14" id="hcl_v6_4" oninput="actualizarGraficas()" class="w-20 text-center border border-slate-300 rounded-lg p-1.5 focus:ring-2 focus:ring-indigo-500 focus:outline-none"></td>
+                            <td class="p-3 text-center"><input type="number" step="0.01" min="0" max="14" id="hcl_v6_5" oninput="actualizarGraficas()" class="w-20 text-center border border-slate-300 rounded-lg p-1.5 focus:ring-2 focus:ring-indigo-500 focus:outline-none"></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="p-6 border-t border-slate-200 bg-slate-50/50">
+                <h4 class="text-sm font-bold text-slate-700 mb-3 flex items-center gap-2">
+                    <i class="fa-solid fa-chart-line text-amber-600"></i> Curvas Comparativas: Adición de Ácido Fuerte (HCl 0.1 M)
+                </h4>
+                <div class="relative w-full h-80 bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+                    <canvas id="chartHCl"></canvas>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="bg-white border-t border-slate-200 py-4 mt-8">
+        <div class="max-w-7xl mx-auto px-4 text-center text-xs text-slate-500">
+            Química Experimental II &bull; Guía 6: Soluciones Reguladoras &bull; Entorno Interactivo Académico
+        </div>
+    </footer>
+
+    <script>
+        let chartNaOHInstance = null;
+        let chartHClInstance = null;
+
+        function obtenerDatos(prefijo, vasoNum) {
+            let datos = [];
+            for (let i = 0; i <= 5; i++) {
+                const val = document.getElementById(`${prefijo}_v${vasoNum}_${i}`).value;
+                datos.push(val !== "" ? parseFloat(val) : null);
+            }
+            return datos;
+        }
+
+        // Sistema de alarmas teóricas inteligentes ajustadas con estequiometría exacta para Guía 6
+        function evaluarAlarmasTeoricas() {
+            const contenedor = document.getElementById('contenedorAlarmas');
+            let alertas = [];
+
+            // Leer datos actuales
+            const naoh_v1 = obtenerDatos('naoh', 1);
+            const naoh_v2 = obtenerDatos('naoh', 2);
+            const naoh_v3 = obtenerDatos('naoh', 3);
+            const hcl_v4 = obtenerDatos('hcl', 4);
+            const hcl_v5 = obtenerDatos('hcl', 5);
+            const hcl_v6 = obtenerDatos('hcl', 6);
+
+            // Alarma 1: pH inicial del agua pura en Vaso 1 y Vaso 4
+            if (naoh_v1[0] !== null && (naoh_v1[0] < 5.5 || naoh_v1[0] > 8.0)) {
+                alertas.push({
+                    tipo: 'warning',
+                    titulo: 'Vaso 1 (Agua Destilada): pH inicial fuera del rango esperado',
+                    texto: `El pH inicial registrado (${naoh_v1[0]}) difiere de la neutralidad esperada (aprox. 6.0 - 7.5 debido al CO₂ disuelto). Verifique que el vaso contenía exclusivamente agua desionizada limpia.`
+                });
+            }
+            if (hcl_v4[0] !== null && (hcl_v4[0] < 5.5 || hcl_v4[0] > 8.0)) {
+                alertas.push({
+                    tipo: 'warning',
+                    titulo: 'Vaso 4 (Agua Destilada): pH inicial fuera del rango esperado',
+                    texto: `El pH inicial del agua para la adición de ácido (${hcl_v4[0]}) no está cerca de la neutralidad. Asegúrese de emplear agua pura.`
+                });
+            }
+
+            // Alarma 2: Salto drástico en agua con NaOH (Vaso 1) o HCl (Vaso 4)
+            // Al agregar 1 mL de NaOH 0.1M a 50 mL de agua, el pH teóricamente salta a > 11.2
+            if (naoh_v1[0] !== null && naoh_v1[1] !== null) {
+                const saltoV1 = naoh_v1[1] - naoh_v1[0];
+                if (saltoV1 < 2.5) {
+                    alertas.push({
+                        tipo: 'error',
+                        titulo: '⚠️ Alerta Teórica - Vaso 1 (Agua + NaOH): Salto de pH insuficiente',
+                        texto: `Con el primer mililitro de NaOH 0.1 M, el agua pura sin amortiguador debe experimentar un incremento abrupto superior a 2.5 - 3 unidades (pH > 10-11). Un cambio tan leve sugiere posible error de pipeteo o concentración incorrecta del reactivo.`
+                    });
+                }
+            }
+            // Al agregar 1 mL de HCl 0.1M a 50 mL de agua, el pH teóricamente cae a ~2.7
+            if (hcl_v4[0] !== null && hcl_v4[1] !== null) {
+                const caidaV4 = hcl_v4[0] - hcl_v4[1];
+                if (caidaV4 < 2.5) {
+                    alertas.push({
+                        tipo: 'error',
+                        titulo: '⚠️ Alerta Teórica - Vaso 4 (Agua + HCl): Caída de pH insuficiente',
+                        texto: `Al agregar el primer mililitro de HCl 0.1 M, el agua pura colapsa su pH de forma inmediata (caída abrupta de más de 2.5 unidades hacia pH cercano a 2.7).`
+                    });
+                }
+            }
+
+            // Alarma 3: Buffer de Acetatos (Vasos 2 y 5)
+            // Mezcla exacta: 25 mL CH3COOH 0.1M + 25 mL CH3COONa 0.1M (Volumen total 50 mL, [ácido] = 0.05M, [sal] = 0.05M)
+            // Por Henderson-Hasselbalch, pK_a del ácido acético = 4.74. pH inicial teórico = 4.74.
+            if (naoh_v2[0] !== null && (naoh_v2[0] < 4.3 || naoh_v2[0] > 5.2)) {
+                alertas.push({
+                    tipo: 'warning',
+                    titulo: 'Vaso 2 (Buffer de Acetatos): pH inicial fuera de rango esperado',
+                    texto: `Para la mezcla equimolar de 25 mL de CH₃COOH 0,1 M y 25 mL de CH₃COONa 0,1 M, el pH inicial teórico exacto es 4.74. Un valor medido de ${naoh_v2[0]} sugiere revisar las concentraciones volumétricas o la calibración del sensor/papel indicador.`
+                });
+            }
+            if (hcl_v5[0] !== null && (hcl_v5[0] < 4.3 || hcl_v5[0] > 5.2)) {
+                alertas.push({
+                    tipo: 'warning',
+                    titulo: 'Vaso 5 (Buffer de Acetatos): pH inicial fuera de rango esperado',
+                    texto: `El pH inicial registrado (${hcl_v5[0]}) difiere significativamente del valor teórico de 4.74 para este sistema regulador de acetatos.`
+                });
+            }
+
+            // Capacidad reguladora del Buffer de Acetatos: Tras 5 mL de titulante 0.1M, el cambio total no debe exceder 0.4 - 0.5 unidades de pH de forma ideal.
+            if (naoh_v2[0] !== null && naoh_v2[5] !== null) {
+                const deltaV2 = Math.abs(naoh_v2[5] - naoh_v2[0]);
+                if (deltaV2 > 1.2) {
+                    alertas.push({
+                        tipo: 'error',
+                        titulo: '⚠️ Alerta Teórica - Vaso 2 (Buffer de Acetatos + NaOH): Variación excesiva de pH',
+                        texto: `El cambio total de pH tras 5 mL de NaOH fue de ${deltaV2.toFixed(2)} unidades. Un búfer correctamente preparado de acetatos 0.05 M mantiene variaciones muy estables y controladas (< 0.5 unidades). Verifique si las soluciones de ácido y sal se prepararon a 0.1 M.`
+                    });
+                }
+            }
+            if (hcl_v5[0] !== null && hcl_v5[5] !== null) {
+                const deltaV5 = Math.abs(hcl_v5[5] - hcl_v5[0]);
+                if (deltaV5 > 1.2) {
+                    alertas.push({
+                        tipo: 'error',
+                        titulo: '⚠️ Alerta Teórica - Vaso 5 (Buffer de Acetatos + HCl): Variación excesiva de pH',
+                        texto: `El cambio total de pH tras 5 mL de HCl fue de ${deltaV5.toFixed(2)} unidades, superando la resistencia esperada para el búfer de acetatos.`
+                    });
+                }
+            }
+
+            // Alarma 4: Sistema Alka-Seltzer (Vasos 3 y 6) - 1 tableta efervescente en 50 mL de agua
+            // El pH inicial típico con una tableta comercial efervescente (ácido cítrico + bicarbonato) se sitúa en torno a 5.0 - 6.0
+            if (naoh_v3[0] !== null && (naoh_v3[0] < 4.2 || naoh_v3[0] > 6.5)) {
+                alertas.push({
+                    tipo: 'warning',
+                    titulo: 'Vaso 3 (Alka-Seltzer): pH inicial atípico',
+                    texto: `La disolución de una tableta completa de Alka-Seltzer en 50 mL de agua genera típicamente un pH inicial entre 5.0 y 6.0 debido a los sistemas carbonato/bicarbonato y ácidos orgánicos. Se registró ${naoh_v3[0]}.`
+                });
+            }
+            if (hcl_v6[0] !== null && (hcl_v6[0] < 4.2 || hcl_v6[0] > 6.5)) {
+                alertas.push({
+                    tipo: 'warning',
+                    titulo: 'Vaso 6 (Alka-Seltzer): pH inicial atípico',
+                    texto: `El pH inicial del sistema Alka-Seltzer (${hcl_v6[0]}) se encuentra fuera del intervalo característico de esta tableta efervescente.`
+                });
+            }
+
+            // Renderizar alarmas en pantalla
+            if (alertas.length > 0) {
+                let html = '';
+                alertas.forEach(alerta => {
+                    const bgClass = alerta.tipo === 'error' ? 'bg-rose-50 border-rose-200 text-rose-900' : 'bg-amber-50 border-amber-200 text-amber-900';
+                    const iconClass = alerta.tipo === 'error' ? 'fa-triangle-exclamation text-rose-600' : 'fa-circle-exclamation text-amber-600';
+                    html += `
+                        <div class="${bgClass} border p-4 rounded-xl shadow-sm flex items-start gap-3 transition-all">
+                            <i class="fa-solid ${iconClass} text-lg mt-0.5"></i>
+                            <div>
+                                <h4 class="text-sm font-bold">${alerta.titulo}</h4>
+                                <p class="text-xs mt-1 leading-relaxed opacity-90">${alerta.texto}</p>
+                            </div>
+                        </div>
+                    `;
+                });
+                contenedor.innerHTML = html;
+            } else {
+                contenedor.innerHTML = ''; // Ningún mensaje si los datos son coherentes
+            }
+        }
+
+        function inicializarGraficas() {
+            const ctxNaOH = document.getElementById('chartNaOH').getContext('2d');
+            chartNaOHInstance = new Chart(ctxNaOH, {
+                type: 'line',
+                data: {
+                    labels: ['0 mL', '1 mL', '2 mL', '3 mL', '4 mL', '5 mL'],
+                    datasets: [
+                        {
+                            label: 'Vaso 1: Agua Pura (Teórico/Experimental)',
+                            data: [null, null, null, null, null, null],
+                            borderColor: '#3b82f6',
+                            backgroundColor: '#3b82f6',
+                            borderWidth: 2,
+                            tension: 0.1,
+                            spanGaps: true
+                        },
+                        {
+                            label: 'Vaso 2: Amortiguador Acetatos',
+                            data: [null, null, null, null, null, null],
+                            borderColor: '#10b981',
+                            backgroundColor: '#10b981',
+                            borderWidth: 2,
+                            tension: 0.1,
+                            spanGaps: true
+                        },
+                        {
+                            label: 'Vaso 3: Alka-Seltzer',
+                            data: [null, null, null, null, null, null],
+                            borderColor: '#8b5cf6',
+                            backgroundColor: '#8b5cf6',
+                            borderWidth: 2,
+                            tension: 0.1,
+                            spanGaps: true
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            min: 0,
+                            max: 14,
+                            title: { display: true, text: 'pH' }
+                        },
+                        x: {
+                            title: { display: true, text: 'Volumen de NaOH 0.1M Adicionado (mL)' }
+                        }
+                    }
+                }
+            });
+
+            const ctxHCl = document.getElementById('chartHCl').getContext('2d');
+            chartHClInstance = new Chart(ctxHCl, {
+                type: 'line',
+                data: {
+                    labels: ['0 mL', '1 mL', '2 mL', '3 mL', '4 mL', '5 mL'],
+                    datasets: [
+                        {
+                            label: 'Vaso 4: Agua Pura (Teórico/Experimental)',
+                            data: [null, null, null, null, null, null],
+                            borderColor: '#3b82f6',
+                            backgroundColor: '#3b82f6',
+                            borderWidth: 2,
+                            tension: 0.1,
+                            spanGaps: true
+                        },
+                        {
+                            label: 'Vaso 5: Amortiguador Acetatos',
+                            data: [null, null, null, null, null, null],
+                            borderColor: '#10b981',
+                            backgroundColor: '#10b981',
+                            borderWidth: 2,
+                            tension: 0.1,
+                            spanGaps: true
+                        },
+                        {
+                            label: 'Vaso 6: Alka-Seltzer',
+                            data: [null, null, null, null, null, null],
+                            borderColor: '#f59e0b',
+                            backgroundColor: '#f59e0b',
+                            borderWidth: 2,
+                            tension: 0.1,
+                            spanGaps: true
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            min: 0,
+                            max: 14,
+                            title: { display: true, text: 'pH' }
+                        },
+                        x: {
+                            title: { display: true, text: 'Volumen de HCl 0.1M Adicionado (mL)' }
+                        }
+                    }
+                }
+            });
+        }
+
+        function actualizarGraficas() {
+            chartNaOHInstance.data.datasets[0].data = obtenerDatos('naoh', 1);
+            chartNaOHInstance.data.datasets[1].data = obtenerDatos('naoh', 2);
+            chartNaOHInstance.data.datasets[2].data = obtenerDatos('naoh', 3);
+            chartNaOHInstance.update();
+
+            chartHClInstance.data.datasets[0].data = obtenerDatos('hcl', 4);
+            chartHClInstance.data.datasets[1].data = obtenerDatos('hcl', 5);
+            chartHClInstance.data.datasets[2].data = obtenerDatos('hcl', 6);
+            chartHClInstance.update();
+
+            // Ejecutar revisión de alarmas teóricas de forma reactiva
+            evaluarAlarmasTeoricas();
+        }
+
+        function cargarCurvasTeoricas() {
+            // Curvas ideales calculadas teóricamente a partir de pH 7 en agua y buffers
+            const naoh_v1 = [7.00, 11.29, 11.60, 11.78, 11.91, 12.00];
+            const naoh_v2 = [4.74, 4.78, 4.82, 4.86, 4.90, 4.94];
+            const naoh_v3 = [5.50, 5.62, 5.75, 5.88, 6.01, 6.15];
+
+            for(let i=0; i<=5; i++) {
+                document.getElementById(`naoh_v1_${i}`).value = naoh_v1[i];
+                document.getElementById(`naoh_v2_${i}`).value = naoh_v2[i];
+                document.getElementById(`naoh_v3_${i}`).value = naoh_v3[i];
+            }
+
+            const hcl_v4 = [7.00, 2.71, 2.40, 2.22, 2.10, 2.00];
+            const hcl_v5 = [4.74, 4.70, 4.66, 4.62, 4.58, 4.54];
+            const hcl_v6 = [5.50, 5.35, 5.20, 5.06, 4.91, 4.75];
+
+            for(let i=0; i<=5; i++) {
+                document.getElementById(`hcl_v4_${i}`).value = hcl_v4[i];
+                document.getElementById(`hcl_v5_${i}`).value = hcl_v5[i];
+                document.getElementById(`hcl_v6_${i}`).value = hcl_v6[i];
+            }
+
+            actualizarGraficas();
+        }
+
+        function cargarDatosEjemplo() {
+            const naoh_v1 = [7.00, 10.30, 11.30, 11.70, 11.96, 12.12];
+            const naoh_v2 = [4.75, 4.80, 4.86, 4.92, 4.98, 5.05];
+            const naoh_v3 = [5.50, 5.62, 5.75, 5.88, 6.01, 6.15];
+
+            for(let i=0; i<=5; i++) {
+                document.getElementById(`naoh_v1_${i}`).value = naoh_v1[i];
+                document.getElementById(`naoh_v2_${i}`).value = naoh_v2[i];
+                document.getElementById(`naoh_v3_${i}`).value = naoh_v3[i];
+            }
+
+            const hcl_v4 = [7.00, 3.70, 3.00, 2.70, 2.52, 2.40];
+            const hcl_v5 = [4.75, 4.69, 4.63, 4.56, 4.49, 4.41];
+            const hcl_v6 = [5.50, 5.35, 5.20, 5.06, 4.91, 4.75];
+
+            for(let i=0; i<=5; i++) {
+                document.getElementById(`hcl_v4_${i}`).value = hcl_v4[i];
+                document.getElementById(`hcl_v5_${i}`).value = hcl_v5[i];
+                document.getElementById(`hcl_v6_${i}`).value = hcl_v6[i];
+            }
+
+            actualizarGraficas();
+        }
+
+        function reiniciarDatos() {
+            const inputs = document.querySelectorAll('input[type="number"]');
+            inputs.forEach(input => input.value = '');
+            actualizarGraficas();
+        }
+
+        window.onload = function() {
+            inicializarGraficas();
+        };
+    </script>
+
+</body>
+</html>
